@@ -1,0 +1,7 @@
+name: isoquant
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - isoquant=3.6.1

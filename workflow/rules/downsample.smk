@@ -1,0 +1,180 @@
+configfile: "config/config.yaml"
+
+
+singularity: f"docker://condaforge/mambaforge:{config['mambaforge_version']}"
+
+
+# for sample in config["sample_names"]:
+#     for subsample_number in config["subsample_numbers_sirv"]:
+#         for read_number in config["subsample_read_numbers_sirv"]:
+
+#             rule:
+#                 input:
+#                     input_name=f"results/align/run_minimap2_transcriptome_sirv/{sample}/{sample}.aligned.bam",
+#                 output:
+#                     output_name=f"results/downsample/run_minimap2_transcriptome_sirv/{subsample_number}/{read_number}/{{sample}}/{{sample}}.aligned.bam",
+#                 params:
+#                     seed=subsample_number,
+#                     number_to_sample=read_number,
+#                     is_transcriptome=True,
+#                     read_name_sam=config["read_name_sam"],
+#                 threads: config["stall_io_threads"]
+#                 log:
+#                     f"logs/subsample/run_minimap2_transcriptome_sirv/{subsample_number}/{read_number}/{{sample}}.log",
+#                 conda:
+#                     "../envs/rsamtools.yaml"
+#                 script:
+#                     "../scripts/subsample_bam.R"
+
+
+# for sample in config["sample_names"]:
+#     for subsample_number in config["subsample_numbers_sirv"]:
+#         for read_number in config["subsample_read_numbers_sirv"]:
+
+#             rule:
+#                 input:
+#                     input_name=f"results/align/run_minimap2_sirv/{sample}/{sample}.aligned.bam",
+#                 output:
+#                     output_name=f"results/downsample/run_minimap2_sirv/{subsample_number}/{read_number}/{{sample}}/{{sample}}.aligned.sorted.bam",
+#                 params:
+#                     seed=subsample_number,
+#                     number_to_sample=read_number,
+#                     is_transcriptome=False,
+#                     read_name_sam=config["read_name_sam"],
+#                 threads: config["stall_io_threads"]
+#                 log:
+#                     f"logs/subsample/run_minimap2_sirv/{subsample_number}/{read_number}/{{sample}}.log",
+#                 conda:
+#                     "../envs/rsamtools.yaml"
+#                 script:
+#                     "../scripts/subsample_bam.R"
+
+
+# for sample in config["sample_names"]:
+#     for subsample_number in config["subsample_numbers_sirv"]:
+#         for read_number in config["subsample_read_numbers_sirv"]:
+
+#             rule:
+#                 input:
+#                     first_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}.reads_1.fastq.gz",
+#                     second_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}.reads_2.fastq.gz",
+#                 output:
+#                     first_reads=f"results/subsample/convert_mapped_bams_to_fastq/{subsample_number}_{str(read_number)}_sirv/{{sample}}-r1.fastq.gz",
+#                     second_reads=f"results/subsample/convert_mapped_bams_to_fastq/{subsample_number}_{str(read_number)}_sirv/{{sample}}-r2.fastq.gz",
+#                 params:
+#                     seed=subsample_number,
+#                     number_to_sample=read_number,
+#                 threads: config["stall_io_threads"]
+#                 log:
+#                     f"logs/subsample/convert_mapped_bams_to_fastq/sirv/{subsample_number}/{read_number}/{{sample}}.log",
+#                 conda:
+#                     "../envsstandalone/seqtk.yaml"
+#                 shell:
+#                     """
+#                     seqtk --version > {log};
+#                     seqtk sample -s {params.seed} {input.first_reads} {params.number_to_sample} > {output.first_reads} 2>> {log};
+#                     seqtk sample -s {params.seed} {input.second_reads} {params.number_to_sample} > {output.second_reads} 2>> {log}
+#                     """
+
+
+rule downsample_long_read_fastq:
+    input:
+        "results/prepare/convert_mapped_bams_to_fastq/{sample}/{type}.reads.fastq.gz",
+    output:
+        "results/subsample/convert_mapped_bams_to_fastq_long_reads/{subsample_number}_{read_number}_{type}/{sample}.fastq.gz",
+    params:
+        seed=lambda wc: wc.subsample_number,
+        number_to_sample=lambda wc: wc.read_number,
+    threads: config["stall_io_threads"]
+    log:
+        "logs/subsample/convert_mapped_bams_to_fastq/sirv/{subsample_number}/{read_number}/{type}/{sample}.log",
+    conda:
+        "../envs/standalone/seqtk.yaml"
+    shell:
+        """
+        seqtk sample -s {params.seed} {input} {params.number_to_sample} > {output} 2> {log}
+        """
+
+
+rule downsample_minimap2_transcriptome:
+    input:
+        input_name="results/align/run_minimap2_transcriptome_{type}/{sample}/{sample}.aligned.bam",
+    output:
+        output_name="results/downsample/run_minimap2_transcriptome_{type}/{subsample_number}/{read_number}/{sample}/{sample}.aligned.bam",
+    params:
+        seed=lambda wc: wc.subsample_number,
+        number_to_sample=lambda wc: wc.read_number,
+        is_transcriptome=True,
+        read_name_sam=config["read_name_sam"],
+    threads: config["stall_io_threads"]
+    log:
+        "logs/subsample/run_minimap2_transcriptome_{type}/{subsample_number}/{read_number}/{sample}.log",
+    conda:
+        "../envs/r/rsamtools.yaml"
+    script:
+        "../scripts/r/subsample_bam.R"
+
+
+rule downsample_minimap2:
+    input:
+        input_name="results/align/run_minimap2_{type}/{sample}/{sample}.aligned.sorted.bam",
+    output:
+        output_name="results/downsample/run_minimap2_{type}/{subsample_number}/{read_number}/{sample}/{sample}.aligned.sorted.bam",
+    params:
+        seed=lambda wc: wc.subsample_number,
+        number_to_sample=lambda wc: wc.read_number,
+        is_transcriptome=False,
+        read_name_sam=config["read_name_sam"],
+    threads: config["stall_io_threads"]
+    log:
+        "logs/subsample/run_minimap2_{type}/{subsample_number}/{read_number}/{sample}.log",
+    conda:
+        "../envs/r/rsamtools.yaml"
+    script:
+        "../scripts/r/subsample_bam.R"
+
+
+rule downsample_short_read_fastq:
+    input:
+        first_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}/{sample}.reads_1.fastq.gz",
+        second_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}/{sample}.reads_2.fastq.gz",
+    output:
+        first_reads="results/subsample/convert_mapped_bams_to_fastq/{subsample_number}_{read_number}_{type}/{sample}-r1.fastq.gz",
+        second_reads="results/subsample/convert_mapped_bams_to_fastq/{subsample_number}_{read_number}_{type}/{sample}-r2.fastq.gz",
+    params:
+        seed=lambda wc: wc.subsample_number,
+        number_to_sample=lambda wc: wc.read_number,
+    threads: config["stall_io_threads"]
+    log:
+        "logs/subsample/convert_mapped_bams_to_fastq/{type}/{subsample_number}/{read_number}/{sample}.log",
+    conda:
+        "../envs/standalone/seqtk.yaml"
+    shell:
+        """
+        seqtk sample -s {params.seed} {input.first_reads} {params.number_to_sample} > {output.first_reads} 2> {log};
+        seqtk sample -s {params.seed} {input.second_reads} {params.number_to_sample} > {output.second_reads} 2>> {log}
+        """
+
+
+# for sample in config["sample_names"]:
+#     for subsample_number in config["subsample_numbers_gencode"]:
+#         for read_number in config["subsample_read_numbers_gencode"]:
+#             rule:
+#                 input:
+#                     "results/prepare/convert_mapped_bams_to_fastq/{sample}/{type}.reads.fastq.gz",
+#                 output:
+#                     f"results/subsample/convert_mapped_bams_to_fastq_long_reads/{subsample_number}_{str(read_number)}_gencode/{{sample}}.fastq.gz",
+#                 params:
+#                     seed=subsample_number,
+#                     number_to_sample=read_number,
+#                 threads: config["stall_io_threads"]
+#                 log:
+#                     f"logs/subsample/convert_mapped_bams_to_fastq/gencode/{subsample_number}/{read_number}/{{sample}}.log",
+#                 conda:
+#                     "../envsstandalone/seqtk.yaml"
+#                 shell:
+#                     """
+#                     seqtk --version > {log};
+#                     seqtk sample -s {params.seed} {input.first_reads} {params.number_to_sample} > {output.first_reads} 2>> {log};
+#                     seqtk sample -s {params.seed} {input.second_reads} {params.number_to_sample} > {output.second_reads} 2>> {log}
+#                     """

@@ -1,0 +1,7 @@
+name: gffutils
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - gffutils=0.13

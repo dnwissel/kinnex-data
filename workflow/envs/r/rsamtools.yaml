@@ -1,0 +1,8 @@
+name: samtools
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - samtools=1.19.2
+  - bioconductor-rsamtools=2.18.0

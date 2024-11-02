@@ -1,0 +1,9 @@
+name: bambu
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-biocmanager=1.30.25
+  - r-renv=1.0.10
+  - libxml2

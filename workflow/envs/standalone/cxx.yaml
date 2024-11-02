@@ -1,0 +1,9 @@
+name: star
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - cxx-compiler=1.8.0
+  - cmake=3.26.4
+  - make=4.2.1

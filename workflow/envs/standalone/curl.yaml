@@ -1,0 +1,9 @@
+name: curl
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - curl=8.10.1
+  - gzip=1.13
+  - unzip=6.0

@@ -1,0 +1,9 @@
+name: liqa
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.7.3
+  - pip:
+    - git+https://github.com/WGLab/LIQA

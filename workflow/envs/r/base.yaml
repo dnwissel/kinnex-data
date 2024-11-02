@@ -1,0 +1,8 @@
+name: base
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconductor-variantannotation=1.48.1
+  - bioconductor-rtracklayer=1.62.0

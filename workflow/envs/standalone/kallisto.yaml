@@ -1,0 +1,8 @@
+name: kallisto
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - kallisto=0.51.0
+  - bustools=0.44.1

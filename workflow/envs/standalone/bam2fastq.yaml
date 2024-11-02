@@ -1,0 +1,8 @@
+name: bam2fastq
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pbtk=3.1.0
+  - pbbam=2.4.0

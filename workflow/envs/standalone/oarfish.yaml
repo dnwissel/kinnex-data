@@ -1,0 +1,7 @@
+name: oarfish
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - oarfish=0.6.2
