@@ -4,22 +4,27 @@ configfile: "config/config.yaml"
 singularity: f"docker://condaforge/mambaforge:{config['mambaforge_version']}"
 
 
-rule quantify_subsampled_run_oarfish_subsampled:
+rule quantify_run_oarfish:
     input:
-        "results/downsample/run_minimap2_transcriptome_{type}/{subsample_number}/{read_number}/{sample}/{sample}.aligned.bam",
+        "results/align/run_minimap2_transcriptome_{type}/{sample}/{sample}.aligned.bam",
     output:
-        "results/quantify_subsampled/run_oarfish_subsampled/{type}/{subsample_number}/{read_number}/{sample}/{sample}.quant",
+        "results/quantify/run_oarfish/{type}/{sample}/{sample}.quant",
     params:
-        output_path="results/quantify_subsampled/run_oarfish_subsampled/{type}/{subsample_number}/{read_number}/{sample}/{sample}",
+        output_path="results/quantify/run_oarfish/{type}/{sample}/{sample}",
         filter_group=config["oarfish_filter_group"],
-    log:
-        "logs/quantify_subsampled/run_oarfish_subsampled/{type}/{subsample_number}/{read_number}/{sample}.out",
     threads: config["quantify_isoforms_threads"]
+    log:
+        "logs/quantify/run_oarfish/{type}/{sample}.out",
+    benchmark:
+        repeat(
+            "benchmarks/quantify/run_oarfish/{type}/{sample}.txt",
+            config["timing_repetitions"],
+        )
     conda:
         "../envs/standalone/oarfish.yaml"
     shell:
         """
-        oarfish --version > {log};
+        conda list > {log};
         oarfish --threads {threads} \
                 --filter-group {params.filter_group} \
                 --model-coverage \
@@ -28,45 +33,22 @@ rule quantify_subsampled_run_oarfish_subsampled:
         """
 
 
-rule quantify_subsampled_run_salmon_illumina_subsampled:
+rule quantify_run_salmon:
     input:
-        index="results/prepare/create_salmon_index/{type}",
-        first_reads="results/downsample/convert_mapped_bams_to_fastq/{subsample_number}_{read_number}_{type}/{sample}-r1.fastq.gz",
-        second_reads="results/downsample/convert_mapped_bams_to_fastq/{subsample_number}_{read_number}_{type}/{sample}-r2.fastq.gz",
-    output:
-        "results/quantify_subsampled/run_salmon_illumina_subsampled/{type}/{subsample_number}/{read_number}/{sample}/quant.sf",
-    params:
-        output_name="results/quantify_subsampled/run_salmon_illumina_subsampled/{type}/{subsample_number}/{read_number}/{sample}",
-        fragment_length_mean=config["salmon_fragment_length_mean"],
-        fragment_length_sd=config["salmon_fragment_length_sd"],
-    log:
-        "logs/quantify_subsampled/run_salmon_illumina_subsampled/{type}/{subsample_number}/{read_number}/{sample}.out",
-    threads: config["quantify_isoforms_threads"]
-    conda:
-        "../envs/standalone/salmon.yaml"
-    shell:
-        """
-        salmon --version > {log};
-        salmon quant -i {input.index} -l A \
-            -1 {input.first_reads} -2 {input.second_reads} \
-            --validateMappings -o {params.output_name} -p {threads} \
-            --seqBias --gcBias --fldMean {params.fragment_length_mean} \
-            --fldSD {params.fragment_length_sd} &>> {log}
-        """
-
-
-rule quantify_subsampled_run_salmon_subsampled:
-    input:
-        reads="results/downsample/run_minimap2_transcriptome_{type}/{subsample_number}/{read_number}/{sample}/{sample}.aligned.bam",
+        reads="results/align/run_minimap2_transcriptome_{type}/{sample}/{sample}.aligned.bam",
         transcriptome="results/prepare/extract_transcriptomes/{type}_transcriptome.fa",
     output:
-        "results/quantify_subsampled/run_salmon_subsampled/{type}/{subsample_number}/{read_number}/{sample}/quant.sf",
+        "results/quantify/run_salmon/{type}/{sample}/quant.sf",
     params:
-        output_path="results/quantify_subsampled/run_salmon_subsampled/{type}/{subsample_number}/{read_number}/{sample}",
-        filter_group=config["oarfish_filter_group"],
-    log:
-        "logs/quantify_subsampled/run_salmon_subsampled/{type}/{subsample_number}/{read_number}/{sample}.out",
+        output_path="results/quantify/run_salmon/{type}/{sample}",
     threads: config["quantify_isoforms_threads"]
+    log:
+        "logs/quantify/run_salmon/{type}/{sample}.out",
+    benchmark:
+        repeat(
+            "benchmarks/quantify/run_salmon/{type}/{sample}.txt",
+            config["timing_repetitions"],
+        )
     conda:
         "../envs/standalone/salmon.yaml"
     shell:
@@ -77,66 +59,51 @@ rule quantify_subsampled_run_salmon_subsampled:
         """
 
 
-rule quantify_subsampled_run_bambu_subsampled:
+rule quantify_run_bambu:
     input:
-        reads="results/downsample/run_minimap2_{type}/{subsample_number}/{read_number}/{sample}/{sample}.aligned.sorted.bam",
+        reads="results/align/run_minimap2_{type}/{sample}/{sample}.aligned.sorted.bam",
         gencode_transcriptome="results/prepare/adjust_transcriptome_assembly_names/gencode.v45.primary_assembly.annotation.named.gtf",
         gencode_genome="results/prepare/download_genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
         sirv_transcriptome="results/prepare/adjust_sirv_names/sirv_set_four.gtf",
         sirv_genome="results/prepare/adjust_sirv_names/sirv_set_four.fa",
     output:
-        "results/quantify_subsampled/run_bambu_subsampled/{type}/{subsample_number}/{read_number}/{sample}/counts_transcript.txt",
+        "results/quantify/run_bambu/{type}/{sample}/counts_transcript.txt",
     threads: config["quantify_isoforms_threads"]
     params:
-        outdir="results/quantify_subsampled/run_bambu_subsampled/{type}/{subsample_number}/{read_number}/{sample}",
+        outdir="results/quantify/run_bambu/{type}/{sample}",
         sirv="{type}",
     log:
-        "logs/quantify_subsampled/run_bambu_subsampled/{type}/{subsample_number}/{read_number}/{sample}.out",
+        "logs/quantify/run_bambu/{type}/{sample}.out",
+    benchmark:
+        repeat(
+            "benchmarks/quantify/run_bambu/{type}/{sample}.txt",
+            config["timing_repetitions"],
+        )
     conda:
         "../envs/r/bambu.yaml"
     script:
         "../scripts/r/bambu_run_quantification.R"
 
 
-rule quantify_subsampled_run_liqa_subsampled:
+rule quantify_run_isoquant:
     input:
-        reads="results/downsample/run_minimap2_sirv/{subsample_number}/{read_number}/{sample}/{sample}.aligned.sorted.bam",
-        transcriptome="results/prepare/create_refgene_liqa_sirv/sirv.refgene",
-    output:
-        "results/quantify_subsampled/run_liqa_subsampled/sirv/{subsample_number}/{read_number}/{sample}.tsv",
-    threads: config["quantify_isoforms_threads"]
-    params:
-        max_distance=config["liqa_max_distance"],
-        f_weight=config["liqa_f_weight"],
-    log:
-        "logs/quantify_subsampled/run_liqa_subsampled/sirv/{subsample_number}/{read_number}/{sample}.out",
-    conda:
-        "../envs/standalone/liqa.yaml"
-    shell:
-        """
-        liqa --version > {log};
-        liqa -task quantify -refgene {input.transcriptome} -bam {input.reads} \
-            -out {output} -max_distance {params.max_distance} \
-            -f_weight {params.f_weight} &>> {log}
-        """
-
-
-rule quantify_subsampled_run_isoquant_subsampled:
-    input:
-        reads="results/downsample/run_minimap2_{type}/{subsample_number}/{read_number}/{sample}/{sample}.aligned.sorted.bam",
+        reads="results/align/run_minimap2_{type}/{sample}/{sample}.aligned.sorted.bam",
         gencode_genome="results/prepare/download_genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
         sirv_transcriptome="results/prepare/make_db_files/sirv_set_four.db",
         gencode_transcriptome="results/prepare/make_db_files/gencode.v45.primary_assembly.annotation.named.db",
         sirv_genome="results/prepare/adjust_sirv_names/sirv_set_four.fa",
     output:
-        directory(
-            "results/quantify_subsampled/run_isoquant_subsampled/{type}/{subsample_number}/{read_number}/{sample}"
-        ),
+        directory("results/quantify/run_isoquant/{type}/{sample}"),
     threads: config["quantify_isoforms_threads"]
     params:
-        outdir="results/quantify_subsampled/run_isoquant_subsampled/{type}/{subsample_number}/{read_number}/{sample}",
+        outdir="results/quantify/run_isoquant/{type}/{sample}",
     log:
-        "logs/quantify_subsampled/run_isoquant_subsampled/{type}/{subsample_number}/{read_number}/{sample}.out",
+        "logs/quantify/run_isoquant/{type}/{sample}.out",
+    benchmark:
+        repeat(
+            "benchmarks/quantify/run_isoquant/{type}/{sample}.txt",
+            config["timing_repetitions"],
+        )
     conda:
         "../envs/py/isoquant.yaml"
     shell:
@@ -164,23 +131,26 @@ rule quantify_subsampled_run_isoquant_subsampled:
         """
 
 
-rule quantify_subsampled_run_kallisto_long_subsampled:
+rule quantify_run_kallisto_long:
     input:
-        reads="results/downsample/convert_mapped_bams_to_fastq_long_reads/{subsample_number}_{read_number}_{type}/{sample}.fastq.gz",
+        reads="results/prepare/convert_mapped_bams_to_fastq/{sample}/{type}.reads.fastq.gz",
         index=f"results/prepare/create_lr_kallisto_index/{{type}}_k-{config['lr_kallisto_index_k']}.idx",
         kallisto_binary="results/prepare/compile_lr_kallisto",
         gencode_transcriptome_gmap_headered="results/prepare/standardize_gtf_files/gencode_map_headered.txt",
         sirv_four_transcriptome_gmap_headered="results/prepare/standardize_gtf_files/sirv_set_four_map_headered.txt",
     output:
-        directory(
-            "results/quantify_subsampled/run_kallisto_long/{type}/{subsample_number}/{read_number}/{sample}"
-        ),
+        directory("results/quantify/run_kallisto_long/{type}/{sample}"),
     threads: config["quantify_isoforms_threads"]
     params:
-        outdir="results/quantify_subsampled/run_kallisto_long/{type}/{subsample_number}/{read_number}/{sample}",
+        outdir="results/quantify/run_kallisto_long/{type}/{sample}",
         bus_threshold=config["kallisto_bus_threshold"],
     log:
-        "logs/quantify_subsampled/run_kallisto_long_subsampled/{type}/{subsample_number}/{read_number}/{sample}.out",
+        "logs/quantify/run_kallisto_long/{type}/{sample}.out",
+    benchmark:
+        repeat(
+            "benchmarks/quantify/run_kallisto_long/{type}/{sample}.txt",
+            config["timing_repetitions"],
+        )
     conda:
         "../envs/standalone/kallisto.yaml"
     shell:
@@ -221,4 +191,58 @@ rule quantify_subsampled_run_kallisto_long_subsampled:
                 -e {params.outdir}/count.ec.txt \
                 -o {params.outdir} &>> {log}
         fi
+        """
+
+
+rule quantify_run_salmon_illumina:
+    input:
+        index="results/prepare/create_salmon_index/{type}",
+        first_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}/{sample}.reads_1.fastq.gz",
+        second_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}/{sample}.reads_2.fastq.gz",
+    output:
+        "results/quantify/run_salmon_illumina/{type}/{sample}/quant.sf",
+    params:
+        output_name="results/quantify/run_salmon_illumina/{type}/{sample}",
+        fragment_length_mean=config["salmon_fragment_length_mean"],
+        fragment_length_sd=config["salmon_fragment_length_sd"],
+    log:
+        "logs/quantify/run_salmon_illumina/{type}/{sample}.out",
+    threads: config["quantify_isoforms_threads"]
+    conda:
+        "../envs/standalone/salmon.yaml"
+    shell:
+        """
+        conda list > {log};
+        salmon quant -i {input.index} -l A \
+            -1 {input.first_reads} -2 {input.second_reads} \
+            --validateMappings -o {params.output_name} -p {threads} \
+            --seqBias --gcBias --fldMean {params.fragment_length_mean} \
+            --fldSD {params.fragment_length_sd} &>> {log}
+        """
+
+
+rule quantify_run_salmon_illumina_novel:
+    input:
+        index="results/prepare/create_salmon_index_novel/{type}",
+        first_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}/{sample}.reads_1.fastq.gz",
+        second_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}/{sample}.reads_2.fastq.gz",
+    output:
+        "results/quantify/run_salmon_illumina_novel/{type}/{sample}/quant.sf",
+    params:
+        output_name="results/quantify/run_salmon_illumina_novel/{type}/{sample}",
+        fragment_length_mean=config["salmon_fragment_length_mean"],
+        fragment_length_sd=config["salmon_fragment_length_sd"],
+    log:
+        "logs/quantify/run_salmon_illumina_novel/{type}/{sample}.out",
+    threads: config["quantify_isoforms_threads"]
+    conda:
+        "../envs/standalone/salmon.yaml"
+    shell:
+        """
+        conda list > {log};
+        salmon quant -i {input.index} -l A \
+            -1 {input.first_reads} -2 {input.second_reads} \
+            --validateMappings -o {params.output_name} -p {threads} \
+            --seqBias --gcBias --fldMean {params.fragment_length_mean} \
+            --fldSD {params.fragment_length_sd} &>> {log}
         """

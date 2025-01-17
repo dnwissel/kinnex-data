@@ -31,6 +31,19 @@ rule prepare_download_transcriptome:
         """
 
 
+rule prepare_download_sqanti_polya_motif_list:
+    output:
+        "results/prepare/download_sqanti_polya_motif_list/motifs.txt",
+    params:
+        url=config["polya_motif_url"],
+    log:
+        "logs/prepare/download_sqanti_polya_motif_list/out.log",
+    shell:
+        """
+        wget -O {output} {params.url} &> {log}
+        """
+
+
 rule prepare_download_sirvome:
     output:
         sirv_set_four=directory(
@@ -125,25 +138,34 @@ rule prepare_standardize_gtf_files:
         """
 
 
-rule prepare_make_db_files:
+rule prepare_make_db_files_sirv:
     input:
-        sirv_gff="results/prepare/standardize_gtf_files/sirv_set_four.gff",
-        gencode_gff="results/prepare/standardize_gtf_files/gencode.v45.primary_assembly.annotation.named.gff",
+        input_gtf="results/prepare/standardize_gtf_files/sirv_set_four.gtf",
     output:
-        sirv_four_transcriptome="results/prepare/make_db_files/sirv_set_four.db",
-        gencode_transcriptome="results/prepare/make_db_files/gencode.v45.primary_assembly.annotation.named.db",
+        output_db="results/prepare/make_db_files/sirv_set_four.db",
+    params:
+        checklines=config["gffutils_checklines"],
     log:
-        "logs/prepare/make_db_files/out.log",
+        "logs/prepare/make_db_files/sirv.log",
     conda:
         "../envs/standalone/gffutils.yaml"
-    shell:
-        """
-        conda list &> {log};
-        gffutils-cli create -o {output.sirv_four_transcriptome} \
-            {input.sirv_gff} &>> {log};
-        gffutils-cli create -o {output.gencode_transcriptome} \
-            {input.gencode_gff} &>> {log}
-        """
+    script:
+        "../scripts/py/create_db_files.py"
+
+
+rule prepare_make_db_files_gencode:
+    input:
+        input_gtf="results/prepare/standardize_gtf_files/gencode.v45.primary_assembly.annotation.named.gtf",
+    output:
+        output_db="results/prepare/make_db_files/gencode.v45.primary_assembly.annotation.named.db",
+    params:
+        checklines=config["gffutils_checklines"],
+    log:
+        "logs/prepare/make_db_files/gencode.log",
+    conda:
+        "../envs/standalone/gffutils.yaml"
+    script:
+        "../scripts/py/create_db_files.py"
 
 
 rule prepare_concatenate_genomes:
@@ -182,7 +204,7 @@ rule prepare_concatenate_transcriptomes:
 
 rule prepare_convert_ubam_to_fastqz:
     input:
-        "data/kinnex/{sample}/flnc.bam",
+        "/home/dwissel/data/seq/kinnex/raw/{sample}/flnc.bam",
     output:
         "results/prepare/convert_ubam_to_fastqz/{sample}/read.fastq.gz",
     params:
@@ -196,7 +218,8 @@ rule prepare_convert_ubam_to_fastqz:
         """
         samtools --version > {log};
         samtools fastq -@ {threads} -0 {output} \
-            -c {params.compression_level} {input} &>> {log}
+            -c {params.compression_level} {input} &>> {log};
+        rm {input} &>> {log}
         """
 
 
@@ -222,7 +245,8 @@ rule prepare_run_minimap2:
             samtools sort -@ {params.align_sort_bam_threads} \
             -m{params.align_sort_bam_memory_gb}g -o {output} - &>> {log};
         sleep 61s &>> {log};
-        samtools index {output} &>> {log}
+        samtools index {output} &>> {log};
+        rm {input.reads} &>> {log}
         """
 
 
@@ -257,7 +281,8 @@ rule prepare_filter_genome_mappings:
             xargs samtools view -b {input} > {output.sirv_reads} 2>> {log};
         sleep 61s &>> {log};
         samtools index {output.gencode_reads} &>> {log};
-        samtools index {output.sirv_reads} &>> {log}
+        samtools index {output.sirv_reads} &>> {log};
+        rm {input} &>> {log}
         """
 
 
@@ -276,7 +301,9 @@ rule prepare_convert_mapped_bams_to_fastq:
     shell:
         """
         samtools --version > {log};
-        samtools fastq -@ {threads} -0 {output} -c {params.compression_level} {input} &>> {log}
+        samtools fastq -@ {threads} -0 {output} \
+            -c {params.compression_level} {input} &>> {log};
+        rm {input} &>> {log}
         """
 
 
@@ -328,10 +355,29 @@ rule prepare_extract_transcriptomes:
         """
 
 
+rule prepare_extract_novel_transcriptome:
+    input:
+        gencode_genome="results/prepare/download_genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
+        gencode_novel_transcriptome="results/discover/fix_bambu_gene_ids/transcriptome.gtf",
+    output:
+        gencode_novel_transcriptome="results/prepare/extract_novel_transcriptome/gencode_transcriptome.fa",
+    log:
+        "logs/prepare/extract_novel_transcriptome/out.log",
+    conda:
+        "../envs/standalone/gffread.yaml"
+    shell:
+        """
+        conda list &> {log};
+        gffread -w {output.gencode_novel_transcriptome} \
+            -g {input.gencode_genome} \
+            {input.gencode_novel_transcriptome} &> {log}
+        """
+
+
 rule prepare_run_trim_galore:
     input:
-        reads_first="data/illumina/{sample}/{sample}-r1.fastq.gz",
-        reads_second="data/illumina/{sample}/{sample}-r2.fastq.gz",
+        reads_first="/home/dwissel/data/seq/kinnex/raw/illumina/FASTQ/{sample}-r1.fastq.gz",
+        reads_second="/home/dwissel/data/seq/kinnex/raw/illumina/FASTQ/{sample}-r2.fastq.gz",
     output:
         reads_first="results/prepare/run_trim_galore/{sample}-r1_val_1.fq.gz",
         reads_second="results/prepare/run_trim_galore/{sample}-r2_val_2.fq.gz",
@@ -404,6 +450,50 @@ rule prepare_create_decoys_salmon_index:
             > {output.gencode_decoyed_transcriptome} 2>> {log};
         cat {input.sirv_transcriptome} {input.sirv_genome} \
             > {output.sirv_decoyed_transcriptome} 2>> {log}
+        """
+
+
+rule prepare_create_decoys_salmon_index_novel:
+    input:
+        gencode_genome="results/prepare/download_genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
+        gencode_transcriptome="results/prepare/extract_novel_transcriptome/gencode_transcriptome.fa",
+    output:
+        gencode_decoys="results/prepare/create_decoys_salmon_index_novel/gencode_decoys.txt",
+        gencode_decoyed_transcriptome="results/prepare/create_decoys_salmon_index_novel/gencode_decoyed_sequence.fa",
+    params:
+        outdir="results/prepare/create_decoys_salmon_index_novel",
+    log:
+        "logs/prepare/create_decoys_salmon_index_novel/out.log",
+    shell:
+        """
+        mkdir -p {params.outdir};
+        grep "^>" {input.gencode_genome} | cut -d " " -f 1 \
+            > {output.gencode_decoys} 2>> {log};
+        sed -i.bak -e 's/>//g' {output.gencode_decoys} 2>> {log};
+        cat {input.gencode_transcriptome} {input.gencode_genome} \
+            > {output.gencode_decoyed_transcriptome} 2>> {log}
+        """
+
+
+rule prepare_create_salmon_index_novel:
+    input:
+        decoys="results/prepare/create_decoys_salmon_index_novel/gencode_decoys.txt",
+        decoyed_transcriptome="results/prepare/create_decoys_salmon_index_novel/gencode_decoyed_sequence.fa",
+    output:
+        directory("results/prepare/create_salmon_index_novel/gencode"),
+    params:
+        k=config["salmon_index_k"],
+    threads: config["align_map_bam_threads"]
+    log:
+        "logs/prepare/create_salmon_index_novel/gencode.log",
+    conda:
+        "../envs/standalone/salmon.yaml"
+    shell:
+        """
+        salmon --version > {log};
+        salmon index -t {input.decoyed_transcriptome} \
+            -i {output} -d {input.decoys} \
+            -k {params.k} -p {threads}  &>> {log}
         """
 
 

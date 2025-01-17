@@ -4,6 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - r-biocmanager=1.30.25
-  - r-renv=1.0.10
-  - libxml2
+  - r-biocmanager
+  - bioconductor-bambu=3.4.0
+  - r-xgboost=2.0.3
+  - bioconductor-biocparallel=1.36.0

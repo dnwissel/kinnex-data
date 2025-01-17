@@ -43,34 +43,35 @@ rule align_run_minimap2:
         """
 
 
-rule align_run_minimap2_transcriptome:
-    input:
-        reads="results/prepare/convert_mapped_bams_to_fastq/{sample}/{type}.reads.fastq.gz",
-        transcriptome="results/prepare/extract_transcriptomes/{type}_transcriptome.fa",
-    output:
-        "results/align/run_minimap2_transcriptome_{type}/{sample}/{sample}.aligned.bam",
-    params:
-        n_secondary_alignments=config["n_secondary_alignments"],
-        align_compress_bam_threads=config["align_sort_bam_threads"],
-    threads: config["align_map_bam_threads"]
-    log:
-        "logs/align/run_minimap2_transcriptome_gencode/{type}/{sample}.log",
-    benchmark:
-        repeat(
-            "benchmarks/align/run_minimap2_transcriptome_gencode/{type}/{sample}.txt",
-            config["timing_repetitions"],
-        )
-    conda:
-        "../envs/standalone/minimap2.yaml"
-    shell:
-        """
-        minimap2 --version > {log};
-        minimap2 --eqx -N {params.n_secondary_alignments} -ax map-hifi \
-            -t {threads} {input.transcriptome} \
-            {input.reads} 2>> {log} | \
-            samtools view -@ {params.align_compress_bam_threads} \
-            -bo {output} - &>> {log}
-        """
+# rule align_run_minimap2_transcriptome:
+#     input:
+#         reads="results/prepare/convert_mapped_bams_to_fastq/{sample}/{type}.reads.fastq.gz",
+#         transcriptome="results/prepare/extract_transcriptomes/{type}_transcriptome.fa",
+#     output:
+#         "results/align/run_minimap2_transcriptome_{type}/{sample}/{sample}.aligned.bam",
+#     params:
+#         n_secondary_alignments=config["n_secondary_alignments"],
+#         memory=config["align_sort_bam_memory_gb"],
+#         align_sort_bam_threads=config["align_sort_bam_threads"],
+#     threads: config["align_map_bam_threads"]
+#     log:
+#         "logs/align/run_minimap2_transcriptome_gencode/{type}/{sample}.log",
+#     benchmark:
+#         repeat(
+#             "benchmarks/align/run_minimap2_transcriptome_gencode/{type}/{sample}.txt",
+#             config["timing_repetitions"],
+#         )
+#     conda:
+#         "../envs/standalone/minimap2.yaml"
+#     shell:
+#         """
+#         minimap2 --version > {log};
+#         minimap2 --eqx -N {params.n_secondary_alignments} -ax map-hifi \
+#             -t {threads} {input.transcriptome} \
+#             {input.reads} 2>> {log} | \
+#             samtools sort -n -@ {params.align_sort_bam_threads} \
+#             -m{params.memory}g -o {output} - &>> {log}
+#         """
 
 
 rule align_run_illumina_star:
@@ -93,7 +94,9 @@ rule align_run_illumina_star:
         STAR --genomeDir {input.genome} --readFilesIn {input.reads_first} {input.reads_second} \
             --runThreadN {threads} --outFileNamePrefix {params.outfile_prefix} \
             --outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c \
-            --outSAMstrandField intronMotif &>> {log}
+            --outSAMstrandField intronMotif &>> {log};
+        rm {input.reads_first} &>> {log};
+        rm {input.reads_second} &>> {log}
         """
 
 
@@ -137,15 +140,17 @@ rule align_separate_sirv_and_gencode_illumina:
         samtools idxstats {input.bam} 2>> {log} | \
             cut -f {params.lines_to_cut} 2>> {log} | \
             grep {params.gencode_chromosomes}  2>> {log} | \
-            xargs samtools view -b {input.bam} > {output.gencode_reads} 2>> {log};
+            xargs samtools view -F 0x904 -b {input.bam} | samtools view -b -f 0x2 - > {output.gencode_reads} 2>> {log};
         samtools idxstats {input.bam} 2>> {log} | \
             cut -f {params.lines_to_cut} 2>> {log} | \
             grep -v {params.gencode_chromosomes} 2>> {log} | \
             head -n -{params.lines_to_cut} 2>> {log} | \
-            xargs samtools view -b {input.bam} > {output.sirv_reads} 2>> {log};
+            xargs samtools view -F 0x904 -b {input.bam} | samtools view -b -f 0x2 - > {output.sirv_reads} 2>> {log};
         sleep 61s &>> {log};
         samtools index {output.gencode_reads} &>> {log};
-        samtools index {output.sirv_reads} &>> {log}
+        samtools index {output.sirv_reads} &>> {log};
+        rm {input.bam} &>> {log};
+        rm {input.index} &>> {log}
         """
 
 
@@ -153,9 +158,11 @@ rule align_convert_illumina_mapped_bams_to_fastq:
     input:
         "results/align/separate_sirv_and_gencode_illumina/{sample}/{sample}.aligned.{type}.sorted.bam",
     output:
+        singletons="results/align/convert_mapped_bams_to_fastq/{sample}/{type}/{sample}.singletons.fastq.gz",
         first_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}/{sample}.reads_1.fastq.gz",
         second_reads="results/align/convert_mapped_bams_to_fastq/{sample}/{type}/{sample}.reads_2.fastq.gz",
     params:
+        memory=config["align_sort_bam_memory_gb"],
         compression_level=config["compression_level"],
     threads: config["stall_io_threads"]
     log:
@@ -165,5 +172,8 @@ rule align_convert_illumina_mapped_bams_to_fastq:
     shell:
         """
         samtools --version > {log};
-        samtools fastq -@ {threads} -1 {output.first_reads} -2 {output.second_reads} -c {params.compression_level} {input} &>> {log}
+        samtools sort -n -m{params.memory}g -@ {threads} {input} 2>> {log} | \
+            samtools fastq -@ {threads} -1 {output.first_reads} \
+            -2 {output.second_reads} -s {output.singletons} -c {params.compression_level} \
+            - &>> {log}
         """

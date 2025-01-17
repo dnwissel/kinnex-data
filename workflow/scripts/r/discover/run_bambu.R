@@ -15,6 +15,8 @@ sink(log, type = "message")
 
 suppressPackageStartupMessages(library(bambu))
 
+print(snakemake@input[["reads"]])
+sessionInfo()
 status <- run_bambu(
   reads = snakemake@input[["reads"]],
   annotations = snakemake@input[["transcriptome"]],
