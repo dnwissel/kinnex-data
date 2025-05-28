@@ -1,7 +1,8 @@
-name: oarfish
+name: base
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - oarfish=0.7.1
+  - pandas=2.2.3
+  - typeguard=4.4.2

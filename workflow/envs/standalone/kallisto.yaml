@@ -4,5 +4,8 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - kallisto=0.51.0
+  - kallisto=0.51.1
   - bustools=0.44.1
+  - cxx-compiler=1.8.0
+  - cmake=3.26.4
+  - make=4.2.1

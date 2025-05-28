@@ -11,7 +11,7 @@ rule annotate_run_sqanti:
         genome="results/prepare/download_genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
         polya_motifs="results/prepare/download_sqanti_polya_motif_list/motifs.txt",
     output:
-        classification="results/annotate/run_sqanti/kinnex_wtc_11_classification.txt",
+        classification="results/annotate/run_sqanti/kinnex_wtc_11/kinnex_wtc_11_classification.txt",
         junctions="results/annotate/run_sqanti/kinnex_wtc_11_junctions.txt",
     params:
         output_folder="results/annotate/run_sqanti/kinnex_wtc_11",
@@ -86,7 +86,7 @@ rule annotate_prepare_sqanti_protein_gffread:
 rule annotate_prepare_sqanti_protein:
     input:
         query="results/annotate/prepare_sqanti_protein_gffread/transcriptome.gtf",
-        reference="results/prepare/standardize_gtf_files/gencode.v45.primary_assembly.annotation.named.gtf",
+        reference="results/annotate/prepare_sqanti_protein_gffread/gencode.gtf",
     output:
         query="results/annotate/prepare_sqanti_protein/transcriptome.gtf",
         reference="results/annotate/prepare_sqanti_protein/gencode.gtf",
@@ -123,9 +123,9 @@ rule annotate_prepare_sqanti_protein_construct_gene_features:
 rule annotate_run_sqanti_protein:
     input:
         query="results/annotate/prepare_sqanti_protein_gffread/transcriptome.gtf",
-        reference="results/prepare/standardize_gtf_files/gencode.v45.primary_assembly.annotation.named.gtf",
-        query_cds="results/annotate/prepare_sqanti_protein_construct_gene_features/gencode.gtf",
-        reference_cds="results/annotate/prepare_sqanti_protein_construct_gene_features/transcriptome.gtf",
+        reference="results/annotate/prepare_sqanti_protein_gffread/gencode.gtf",
+        query_cds="results/annotate/prepare_sqanti_protein_construct_gene_features/transcriptome.gtf",
+        reference_cds="results/annotate/prepare_sqanti_protein_construct_gene_features/gencode.gtf",
     output:
         "results/annotate/run_sqanti_protein/kinnex_wtc_11.sqanti_protein_classification.tsv",
         outdir=directory("results/annotate/run_sqanti_protein"),
@@ -152,10 +152,9 @@ rule annotate_postprocess_sqanti_protein:
     input:
         protein_classification="results/annotate/run_sqanti_protein/kinnex_wtc_11.sqanti_protein_classification.tsv",
         query="results/annotate/prepare_sqanti_protein_gffread/transcriptome.gtf",
-        reference="results/prepare/standardize_gtf_files/gencode.v45.primary_assembly.annotation.named.gtf",
+        reference="results/annotate/prepare_sqanti_protein_gffread/gencode.gtf",
     output:
-        "results/annotate/postprocess_sqanti_protein/transcriptome.protein_classification.tsv",
-        outdir=directory("results/annotate/postprocess_sqanti_protein/"),
+        directory("results/annotate/postprocess_sqanti_protein/"),
     params:
         sample_id="kinnex_wtc_11",
     log:
@@ -167,19 +166,19 @@ rule annotate_postprocess_sqanti_protein:
         conda list &> {log};
         python workflow/scripts/py/get_gc_exon_and_5utr_info.py \
                 --gencode_gtf {input.reference} \
-                --odir {output.outdir} &>> {log};
+                --odir {output} &>> {log};
         python workflow/scripts/py/classify_5utr_status.py \
-                --gencode_exons_bed {output.outdir}/gencode_exons_for_cds_containing_ensts.bed \
-                --gencode_exons_chain {output.outdir}/gc_exon_chain_strings_for_cds_containing_transcripts.tsv \
+                --gencode_exons_bed {output}/gencode_exons_for_cds_containing_ensts.bed \
+                --gencode_exons_chain {output}/gc_exon_chain_strings_for_cds_containing_transcripts.tsv \
                 --sample_cds_gtf {input.query} \
-                --odir {output.outdir} &>> {log};
+                --odir {output} &>> {log};
         python workflow/scripts/py/merge_5utr_info_to_pclass_table.py \
             --name {params.sample_id} \
-            --utr_info {output.outdir}/pb_5utr_categories.tsv \
+            --utr_info {output}/pb_5utr_categories.tsv \
             --sqanti_protein_classification {input.protein_classification} \
-            --odir {output.outdir} &>> {log};
+            --odir {output} &>> {log};
         python workflow/scripts/py/protein_classification.py \
-            --sqanti_protein {output.outdir}/{params.sample_id}.sqanti_protein_classification_w_5utr_info.tsv \
+            --sqanti_protein {output}/{params.sample_id}.sqanti_protein_classification_w_5utr_info.tsv \
             --name {params.sample_id} \
-            --dest_dir {output.outdir} &>> {log}
+            --dest_dir {output} &>> {log}
         """

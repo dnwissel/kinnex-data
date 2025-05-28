@@ -25,6 +25,7 @@ rule discover_merge_stringtie2:
             "results/discover/run_stringtie2/{sample}/transcriptome.gtf",
             sample=config["sample_names"],
         ),
+        input_list="stringtie_merge_input_list.txt",
         reference_transcriptome="results/prepare/standardize_gtf_files/gencode.v45.primary_assembly.annotation.named.gtf",
     output:
         "results/discover/merge_stringtie2/transcriptome.gtf",
@@ -35,8 +36,8 @@ rule discover_merge_stringtie2:
     shell:
         """
         conda list > {log};
-        stringtie -G {input.reference_transcriptome} \
-            -o {output} {input.discovered_transcriptomes} &>> {log}
+        stringtie --merge -i -G {input.reference_transcriptome} \
+           -o {output} {input.input_list} &>> {log}
         """
 
 

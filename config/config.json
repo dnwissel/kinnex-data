@@ -1,0 +1,35 @@
+{
+    "coding_noncoding_cols": [
+        "#0072B2",
+        "#D55E00"
+    ],
+    "known_novel_cols": [
+        "#009E73",
+        "#F0E442"
+    ],
+    "up_down_cols": [
+        "#56B4E9",
+        "#CC79A7"
+    ],
+    "seed": 42,
+    "n_colors": 6,
+    "exclude_color": 6,
+    "top_difference": 0.025,
+    "heatmap_difference": 0.3,
+    "side_difference": 0.025,
+    "side_difference_large": 0.05,
+    "exp_design_path": "config/premade_figs/fig1a_resized.pdf",
+    "novel_track_path": "config/premade_figs/finalized_track_with_illumina_fixed.pdf",
+    "pdf_density": 600,
+    "label_size": 36,
+    "chosen_method": "oarfish",
+    "chosen_method_novel": "oarfish",
+    "cpm_threshold": 1.0,
+    "cpm_sample_threshold": 3,
+    "quant_overview": "config/premade_figs/kinnex_data_finalized_resized.pdf",
+    "sirv_design_overview": "config/premade_files/SIRV_Set1_Norm_sequence-design-overview_20210507a.xlsx",
+    "sirv_gtf": "config/premade_files/sirvs_gtf.gtf",
+    "flip_track_names": "config/premade_figs/flip_track_names.pdf",
+    "division_track_adapt": "config/premade_figs/division_track_adapt.pdf",
+    "fig_02_track": "config/premade_figs/fig_02_track.pdf"
+}

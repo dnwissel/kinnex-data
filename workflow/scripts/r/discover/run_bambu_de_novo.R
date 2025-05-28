@@ -1,7 +1,6 @@
 run_bambu <- function(reads, annotations, genome, output_path, ncore, NDR, quantification, lowMemory = TRUE) {
-  bambuAnnotations <- prepareAnnotations(annotations)
   bambu_result <- bambu::bambu(
-    reads = reads, annotations = bambuAnnotations,
+    reads = reads, annotations = annotations,
     genome = genome, discovery = TRUE,
     ncore = ncore, lowMemory = lowMemory, NDR = NDR, quant = FALSE,
     opt.discovery = list(remove.subsetTx = FALSE)
@@ -20,12 +19,12 @@ print(snakemake@input[["reads"]])
 sessionInfo()
 status <- run_bambu(
   reads = snakemake@input[["reads"]],
-  annotations = snakemake@input[["transcriptome"]],
+  annotations = NULL,
   genome = snakemake@input[["genome"]],
   output_path = snakemake@output[[1]],
   ncore = snakemake@threads,
   lowMemory = TRUE,
-  NDR = NULL
+  NDR = 1.0
 )
 
 sink()

@@ -1,7 +1,7 @@
-name: oarfish
+name: bbmap
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - oarfish=0.7.1
+  - bbmap=39.18

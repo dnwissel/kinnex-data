@@ -97,6 +97,25 @@ rule prepare_adjust_sirv_names:
         "../scripts/r/prepare/adjust_sirv_names.R"
 
 
+rule prepare_shuffle_fastq:
+    input:
+        "results/prepare/convert_mapped_bams_to_fastq/{sample}/{type}.reads.fastq.gz",
+    output:
+        "results/prepare/shuffle_fastq/{sample}/{type}.reads.fastq.gz",
+    params:
+        ziplevel=9,
+        mem_gb=12,
+    log:
+        "logs/prepare/shuffle_fastq/{type}/{sample}/out.log",
+    threads: 12
+    conda:
+        "../envs/standalone/bbmap.yaml"
+    shell:
+        """
+        shuffle.sh in={input} out={output} ziplevel={params.ziplevel} -Xmx{params.mem_gb}g
+        """
+
+
 rule prepare_standardize_gtf_files:
     input:
         sirv_four_transcriptome="results/prepare/adjust_sirv_names/sirv_set_four.gtf",
@@ -168,6 +187,21 @@ rule prepare_make_db_files_gencode:
         "../scripts/py/create_db_files.py"
 
 
+rule prepare_make_db_files_gencode_novel:
+    input:
+        input_gtf="results/prepare/standardize_gtf_files_novel/gencode_novel.gtf",
+    output:
+        output_db="results/prepare/make_db_files/gencode.novel.db",
+    params:
+        checklines=config["gffutils_checklines"],
+    log:
+        "logs/prepare/make_db_files/novel.log",
+    conda:
+        "../envs/standalone/gffutils.yaml"
+    script:
+        "../scripts/py/create_db_files.py"
+
+
 rule prepare_concatenate_genomes:
     input:
         sirv_four_genome="results/prepare/adjust_sirv_names/sirv_set_four.fa",
@@ -204,7 +238,7 @@ rule prepare_concatenate_transcriptomes:
 
 rule prepare_convert_ubam_to_fastqz:
     input:
-        "/home/dwissel/data/seq/kinnex/raw/{sample}/flnc.bam",
+        "data/seq/kinnex/raw/{sample}/flnc.bam",
     output:
         "results/prepare/convert_ubam_to_fastqz/{sample}/read.fastq.gz",
     params:
@@ -250,7 +284,6 @@ rule prepare_run_minimap2:
         """
 
 
-# TODO: Double check that the cut commands work and that all gencode chromosomes actually start with chr!
 rule prepare_filter_genome_mappings:
     input:
         "results/prepare/run_minimap2/{sample}/aligned.sorted.bam",
@@ -307,6 +340,27 @@ rule prepare_convert_mapped_bams_to_fastq:
         """
 
 
+rule prepare_convert_mapped_bams_to_fastq_random:
+    input:
+        "results/prepare/filter_genome_mappings/{sample}/{sample}.aligned.{type}.sorted.bam",
+    output:
+        "results/prepare/convert_mapped_bams_to_fastq_random/{sample}/{type}.reads.fastq.gz",
+    params:
+        compression_level=config["compression_level"],
+    threads: config["stall_io_threads"]
+    log:
+        "logs/prepare/convert_mapped_bams_to_fastq_random/{type}/{sample}.log",
+    conda:
+        "../envs/standalone/samtools.yaml"
+    shell:
+        """
+        samtools --version > {log};
+        samtools sort -n -m{params.memory}g -@ {threads} {input} 2>> {log} | samtools fastq -@ {threads} -0 {output} \
+            -c {params.compression_level} - &>> {log};
+        rm {input} &>> {log}
+        """
+
+
 rule prepare_convert_gtfs_to_beds_gencode:
     input:
         gencode_gtf="results/prepare/standardize_gtf_files/gencode.v45.primary_assembly.annotation.named.gtf",
@@ -328,11 +382,11 @@ rule prepare_convert_gtfs_to_beds_gencode:
 rule prepare_extract_transcriptomes:
     input:
         gencode_genome="results/prepare/download_genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
-        gencode_transcriptome="results/prepare/adjust_transcriptome_assembly_names/gencode.v45.primary_assembly.annotation.named.gtf",
+        sirv_transcriptome="results/prepare/standardize_gtf_files/sirv_set_four.gtf",
+        gencode_transcriptome="results/prepare/standardize_gtf_files/gencode.v45.primary_assembly.annotation.named.gtf",
         joint_genome="results/prepare/concatenate_genomes/genome.fa",
         joint_transcriptome="results/prepare/concatenate_transcriptomes/transcriptome.gtf",
         sirv_genome="results/prepare/adjust_sirv_names/sirv_set_four.fa",
-        sirv_transcriptome="results/prepare/adjust_sirv_names/sirv_set_four.gtf",
     output:
         gencode_transcriptome="results/prepare/extract_transcriptomes/gencode_transcriptome.fa",
         joint_transcriptome="results/prepare/extract_transcriptomes/joint_transcriptome.fa",
@@ -352,6 +406,33 @@ rule prepare_extract_transcriptomes:
         gffread -w {output.joint_transcriptome} \
             -g {input.joint_genome} \
             {input.joint_transcriptome} &>> {log}
+        """
+
+
+rule prepare_standardize_gtf_files_novel:
+    input:
+        "results/discover/fix_bambu_gene_ids/transcriptome.gtf",
+    output:
+        transcriptome="results/prepare/standardize_gtf_files_novel/gencode_novel.gtf",
+        gff="results/prepare/standardize_gtf_files_novel/gencode_novel.gff",
+        transcriptome_gmap="results/prepare/standardize_gtf_files_novel/gencode_novel_map.txt",
+        transcriptome_gmap_headered="results/prepare/standardize_gtf_files_novel/gencode_novel_map_headered.txt",
+    log:
+        "logs/prepare/standardize_gtf_files_novel/out.log",
+    conda:
+        "../envs/standalone/gffread.yaml"
+    shell:
+        """
+        gffread --version > {log};
+        gffread -E {input} \
+            -T -o {output.transcriptome} &>> {log};
+        gffread {output.transcriptome} \
+            --table transcript_id,gene_id \
+            > {output.transcriptome_gmap} 2>> {log};
+        echo -e "transcript\tgene" | \
+            cat - {output.transcriptome_gmap} \
+                > {output.transcriptome_gmap_headered} 2>> {log};
+        gffread -o {output.gff} {output.transcriptome} &>> {log}
         """
 
 
@@ -376,8 +457,8 @@ rule prepare_extract_novel_transcriptome:
 
 rule prepare_run_trim_galore:
     input:
-        reads_first="/home/dwissel/data/seq/kinnex/raw/illumina/FASTQ/{sample}-r1.fastq.gz",
-        reads_second="/home/dwissel/data/seq/kinnex/raw/illumina/FASTQ/{sample}-r2.fastq.gz",
+        reads_first="data/seq/kinnex/raw/illumina/FASTQ/{sample}-r1.fastq.gz",
+        reads_second="data/seq/kinnex/raw/illumina/FASTQ/{sample}-r2.fastq.gz",
     output:
         reads_first="results/prepare/run_trim_galore/{sample}-r1_val_1.fq.gz",
         reads_second="results/prepare/run_trim_galore/{sample}-r2_val_2.fq.gz",
@@ -493,6 +574,7 @@ rule prepare_create_salmon_index_novel:
         salmon --version > {log};
         salmon index -t {input.decoyed_transcriptome} \
             -i {output} -d {input.decoys} \
+            --keepDuplicates \
             -k {params.k} -p {threads}  &>> {log}
         """
 
@@ -515,6 +597,7 @@ rule prepare_create_salmon_index:
         salmon --version > {log};
         salmon index -t {input.decoyed_transcriptome} \
             -i {output} -d {input.decoys} \
+            --keepDuplicates \
             -k {params.k} -p {threads}  &>> {log}
         """
 
@@ -546,16 +629,16 @@ rule prepare_compile_lr_kallisto:
     log:
         "logs/prepare/compile_lr_kallisto/out.log",
     conda:
-        "../envs/standalone/cxx.yaml"
+        "../envs/standalone/kallisto.yaml"
     shell:
         """
         mkdir {output}; 
         cd {output};
-        git clone https://github.com/pachterlab/kallisto
-        cd kallisto
-        mkdir build
-        cd build
-        cmake .. -DMAX_KMER_SIZE=64 &> ../../../../../{log}
+        git clone https://github.com/pachterlab/kallisto &> ../../../{log};
+        cd kallisto;
+        mkdir build;
+        cd build;
+        cmake .. -DUSE_HDF5=ON -DMAX_KMER_SIZE=64 &>> ../../../../../{log};
         make &>> ../../../../../{log}
         """
 
@@ -572,7 +655,26 @@ rule prepare_create_lr_kallisto_index:
     log:
         "logs/prepare/create_lr_kallisto_index/{type}.log",
     benchmark:
-        repeat("benchmarks/prepare/create_lr_kallisto_index/{type}.txt", 5)
+        repeat("benchmarks/prepare/create_lr_kallisto_index/{type}.txt", 1)
+    shell:
+        """
+        {input.kallisto_binary}/kallisto/build/src/kallisto index \
+            -k {params.k} -t {threads} -i {output} \
+            {input.transcriptome} &> {log}
+        """
+
+
+rule prepare_create_lr_kallisto_index_novel:
+    input:
+        kallisto_binary="results/prepare/compile_lr_kallisto",
+        transcriptome="results/prepare/extract_novel_transcriptome/gencode_transcriptome.fa",
+    output:
+        f"results/prepare/create_lr_kallisto_index_novel/gencode_novel_k-{config['lr_kallisto_index_k']}.idx",
+    params:
+        k=config["lr_kallisto_index_k"],
+    threads: config["align_map_bam_threads"]
+    log:
+        "logs/prepare/create_lr_kallisto_index_novel/out.log",
     shell:
         """
         {input.kallisto_binary}/kallisto/build/src/kallisto index \

@@ -43,35 +43,62 @@ rule align_run_minimap2:
         """
 
 
-# rule align_run_minimap2_transcriptome:
-#     input:
-#         reads="results/prepare/convert_mapped_bams_to_fastq/{sample}/{type}.reads.fastq.gz",
-#         transcriptome="results/prepare/extract_transcriptomes/{type}_transcriptome.fa",
-#     output:
-#         "results/align/run_minimap2_transcriptome_{type}/{sample}/{sample}.aligned.bam",
-#     params:
-#         n_secondary_alignments=config["n_secondary_alignments"],
-#         memory=config["align_sort_bam_memory_gb"],
-#         align_sort_bam_threads=config["align_sort_bam_threads"],
-#     threads: config["align_map_bam_threads"]
-#     log:
-#         "logs/align/run_minimap2_transcriptome_gencode/{type}/{sample}.log",
-#     benchmark:
-#         repeat(
-#             "benchmarks/align/run_minimap2_transcriptome_gencode/{type}/{sample}.txt",
-#             config["timing_repetitions"],
-#         )
-#     conda:
-#         "../envs/standalone/minimap2.yaml"
-#     shell:
-#         """
-#         minimap2 --version > {log};
-#         minimap2 --eqx -N {params.n_secondary_alignments} -ax map-hifi \
-#             -t {threads} {input.transcriptome} \
-#             {input.reads} 2>> {log} | \
-#             samtools sort -n -@ {params.align_sort_bam_threads} \
-#             -m{params.memory}g -o {output} - &>> {log}
-#         """
+rule align_run_minimap2_transcriptome:
+    input:
+        reads="results/prepare/convert_mapped_bams_to_fastq/{sample}/{type}.reads.fastq.gz",
+        reads="results/prepare/convert_mapped_bams_to_fastq/{sample}/{type}.reads.fastq.gz",
+        transcriptome="results/prepare/extract_transcriptomes/{type}_transcriptome.fa",
+    output:
+        "results/align/run_minimap2_transcriptome_{type}/{sample}/{sample}.aligned.bam",
+    params:
+        n_secondary_alignments=config["n_secondary_alignments"],
+        memory=config["align_sort_bam_memory_gb"],
+        align_sort_bam_threads=config["align_sort_bam_threads"],
+    threads: config["align_map_bam_threads"]
+    log:
+        "logs/align/run_minimap2_transcriptome_gencode/{type}/{sample}.log",
+    benchmark:
+        repeat(
+            "benchmarks/align/run_minimap2_transcriptome_gencode/{type}/{sample}.txt",
+            config["timing_repetitions"],
+        )
+    conda:
+        "../envs/standalone/minimap2.yaml"
+    shell:
+        """
+        minimap2 --version > {log};
+        minimap2 --eqx -N {params.n_secondary_alignments} -ax map-hifi \
+            -t {threads} {input.transcriptome} \
+            {input.reads} 2>> {log} | \
+            samtools sort -n -@ {params.align_sort_bam_threads} \
+            -m{params.memory}g -o {output} - &>> {log}
+        """
+
+
+rule align_run_minimap2_transcriptome_novel:
+    input:
+        reads="results/prepare/convert_mapped_bams_to_fastq/{sample}/gencode.reads.fastq.gz",
+        transcriptome="results/prepare/extract_novel_transcriptome/gencode_transcriptome.fa",
+    output:
+        "results/align/run_minimap2_transcriptome_gencode_novel/{sample}/{sample}.aligned.bam",
+    params:
+        n_secondary_alignments=config["n_secondary_alignments"],
+        memory=config["align_sort_bam_memory_gb"],
+        align_sort_bam_threads=config["align_sort_bam_threads"],
+    threads: config["align_map_bam_threads"]
+    log:
+        "logs/align/run_minimap2_transcriptome_gencode_novel/gencode/{sample}.log",
+    conda:
+        "../envs/standalone/minimap2.yaml"
+    shell:
+        """
+        minimap2 --version > {log};
+        minimap2 --eqx -N {params.n_secondary_alignments} -ax map-hifi \
+            -t {threads} {input.transcriptome} \
+            {input.reads} 2>> {log} | \
+            samtools sort -n -@ {params.align_sort_bam_threads} \
+            -m{params.memory}g -o {output} - &>> {log}
+        """
 
 
 rule align_run_illumina_star:

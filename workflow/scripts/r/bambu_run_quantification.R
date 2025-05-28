@@ -17,8 +17,11 @@ suppressPackageStartupMessages(library(bambu))
 if (snakemake@params[["sirv"]] == "sirv") {
   annotation <- snakemake@input[["sirv_transcriptome"]]
   reference <- snakemake@input[["sirv_genome"]]
-} else {
+} else if (!snakemake@params[["novel"]]) {
   annotation <- snakemake@input[["gencode_transcriptome"]]
+  reference <- snakemake@input[["gencode_genome"]]
+} else {
+  annotation <- snakemake@input[["gencode_novel_transcriptome"]]
   reference <- snakemake@input[["gencode_genome"]]
 }
 

@@ -1,7 +1,8 @@
-name: oarfish
+name: pysam
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - oarfish=0.7.1
+  - pysam=0.23.0
+  - pandas

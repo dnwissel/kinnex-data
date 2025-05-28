@@ -4,4 +4,4 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - isoquant=3.6.1
+  - isoquant=3.6.3

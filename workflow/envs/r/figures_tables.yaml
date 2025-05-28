@@ -1,0 +1,37 @@
+name: figures_tables
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base
+  - r-pdftools
+  - r-data.table=1.17.0
+  - r-ggplot2=3.5.2
+  - r-dplyr=1.1.4
+  - r-ggpubr=0.6.0
+  - r-readr=2.1.5
+  - r-ggrepel=0.9.6
+  - bioconductor-edger
+  - r-pheatmap
+  - r-reshape2=1.4.4
+  - bioconductor-summarizedexperiment=1.36.0
+  - r-rcartocolor
+  - r-cowplot=1.1.3
+  - bioconductor-rtracklayer=1.66.0
+  - r-tidyr=1.3.1
+  - r-ggpmisc=0.6.1
+  - bioconductor-biomart
+  - r-magick=2.8.6
+  - r-scales=1.3.0
+  - r-rcolorbrewer
+  - r-ggplotify=0.1.2
+  - r-rjson=0.2.23
+  - bioconductor-genomicfeatures=1.58.0
+  - r-renv=1.1.4
+  - r-readxl
+  - r-complexupset
+  - bioconductor-tximeta
+  - bioconductor-singlecellexperiment
+  - bioconductor-fishpond
+  - arrow
+  - r-arrow

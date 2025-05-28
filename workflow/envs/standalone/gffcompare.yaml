@@ -1,7 +1,7 @@
-name: oarfish
+name: gffcompare
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - oarfish=0.7.1
+  - gffcompare=0.12.6

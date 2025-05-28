@@ -1,9 +1,22 @@
-sample_names: ["day0-rep1"]
+sample_names:
+  [
+    "day0-rep1",
+    "day0-rep2",
+    "day0-rep3",
+    "day1-rep1",
+    "day2-rep1",
+    "day3-rep1",
+    "day3-rep2",
+    "day4-rep1",
+    "day5-rep1",
+    "day5-rep2",
+    "day5-rep3",
+  ]
 
 snakemake_min_version: "7.30.1"
 mambaforge_version: "23.3.1-0"
 seed: 42
-timing_repetitions: 5
+timing_repetitions: 1
 compression_level: 9
 genome_url: "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
 transcriptome_url: "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_45/gencode.v45.primary_assembly.annotation.gtf.gz"
@@ -15,29 +28,34 @@ sirv_genome_name: "SIRV_ERCC_longSIRV_multi-fasta_20210507.fasta"
 
 align_sort_bam_memory_gb: 4
 align_sort_bam_threads: 4
-align_map_bam_threads: 12
+align_map_bam_threads: 24
 n_secondary_alignments: 100
 illumina_read_length: 150
 salmon_index_k: 31
 lr_kallisto_index_k: 63
 read_name_sam: "qname"
 
-stall_io_threads: 6
+stall_io_threads: 12
+parallel_threads: 12
 
-discover_isoforms_threads: 12
+discover_isoforms_threads: 6
 
 illumina_trim_min_quality: 20
 illumina_trim_min_length: 20
 
-subsample_numbers_sirv: [1]
-subsample_read_numbers_sirv: [0.25e+6]
+subsample_numbers_sirv: [1, 2, 3, 4, 5]
+subsample_read_numbers_sirv: [0.25e+6, 0.5e+6, 1.0e+6, 2.5e+6]
 subsample_numbers_gencode: [1]
-subsample_read_numbers_gencode: [5.0e+6]
+subsample_read_numbers_gencode: [5.0e+6, 10.0e+6, 20.0e+6, 30.0e+6]
 
 quantify_isoforms_threads: 12
 
 salmon_fragment_length_mean: 250
 salmon_fragment_length_sd: 25
+num_bootstraps: 20
+
+
+qc_sample_number: 1000000
 
 liqa_max_distance: 20
 liqa_f_weight: 1
@@ -45,4 +63,13 @@ liqa_f_weight: 1
 kallisto_bus_threshold: 0.8
 
 oarfish_filter_group: "no-filters"
-bambu_version: "3.6.0"
+bambu_version: "3.8.3"
+ggpubfigs_version: "123b675"
+
+gffutils_checklines: 1000
+
+three_prime_bias_subsample: 2500
+
+polya_motif_url: "https://raw.githubusercontent.com/ConesaLab/SQANTI3/refs/heads/master/data/polyA_motifs/mouse_and_human.polyA_motif.txt"
+
+call_orfs_orfanage_mode: "BEST"
