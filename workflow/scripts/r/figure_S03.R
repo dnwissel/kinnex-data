@@ -989,7 +989,7 @@ plot_figure_S03 <- function(output_path, depth) {
                        nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
     ncol = 1,
-    labels = c("F"),
+    labels = c("D"),
     label_size = 36,
     rel_widths = c(1)
   )
@@ -1006,7 +1006,7 @@ plot_figure_S03 <- function(output_path, depth) {
                        nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
     ncol = 1,
-    labels = c("G"),
+    labels = c("E"),
     label_size = 36,
     rel_widths = c(1)
   )
@@ -1023,14 +1023,14 @@ plot_figure_S03 <- function(output_path, depth) {
                        nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
     ncol = 1,
-    labels = c("H"),
+    labels = c("F"),
     label_size = 36,
     rel_widths = c(1)
   )
 
   final <- cowplot::plot_grid(
     first_row,
-    second_row,
+    # second_row,
     third_row,
     fourth_row,
     fifth_row,

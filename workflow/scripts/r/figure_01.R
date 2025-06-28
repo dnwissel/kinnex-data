@@ -1088,34 +1088,17 @@ plot_figure_01 <- function(output_path) {
       labels = c("I"),
       label_size = config$label_size
     ),
-    cowplot::plot_grid(
-      cowplot::plot_grid(NULL,
-        cowplot::plot_grid(NULL,
-          novel_isoform_overview,
-          ncol = 2,
-          rel_widths = c(config$side_difference_large, (1 - config$side_difference_large))
-        ),
-        nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
-      ),
-      nrow = 1,
-      labels = c("N"),
-      label_size = config$label_size
+    cowplot::plot_grid(NULL, cowplot::plot_grid(NULL,
+      spline_plot,
+      ncol = 2,
+      rel_widths = c(config$side_difference_large, (1 - config$side_difference_large))
     ),
-    cowplot::plot_grid(
-      cowplot::plot_grid(NULL,
-        cowplot::plot_grid(NULL,
-          (ggdraw() + draw_image(magick::image_read_pdf(config$novel_track_path, density = 800))),
-          ncol = 2,
-          rel_widths = c(config$side_difference_large, (1 - config$side_difference_large))
-        ),
-        nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
-      ),
-      nrow = 1,
-      labels = c("O"),
-      label_size = config$label_size
+    nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
-    ncol = 3,
-    rel_widths = c(0.45, 0.3, 0.35)
+    labels = c("", "M"),
+    ncol = 2,
+    label_size = config$label_size,
+    rel_widths = c(0.45, sum(c(0.3, 0.35)))
   )
 
   transcriptome <- import("results/discover/fix_bambu_gene_ids/transcriptome.gtf")
@@ -1410,67 +1393,41 @@ plot_figure_01 <- function(output_path) {
       ),
       nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
       ),
-      cowplot::plot_grid(NULL, cowplot::plot_grid(NULL,
-        spline_plot,
-        ncol = 2,
-        rel_widths = c(config$side_difference_large, (1 - config$side_difference_large))
-      ),
-      nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
-      ),
-      nrow = 2,
+      nrow = 1,
       label_size = config$label_size,
-      labels = c("L", "M")
+      labels = c("L")
     ),
     cowplot::plot_grid(
-      cowplot::plot_grid(
-        cowplot::plot_grid(NULL, cowplot::plot_grid(NULL,
-          expressed_genes_low + theme(
-            axis.title.x = element_blank(),
-            axis.text.x = element_blank(),
-            axis.ticks.x = element_blank()
-          ) + theme(legend.position = "none"),
+      cowplot::plot_grid(NULL,
+        cowplot::plot_grid(NULL,
+          novel_isoform_overview,
           ncol = 2,
           rel_widths = c(config$side_difference_large, (1 - config$side_difference_large))
         ),
         nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
-        ),
-        cowplot::plot_grid(NULL, cowplot::plot_grid(NULL,
-          expressed_genes_high + theme(
-            axis.title.x = element_blank(),
-            axis.text.x = element_blank(),
-            axis.ticks.x = element_blank()
-          ) + theme(legend.position = "none"),
-          ncol = 2,
-          rel_widths = c(config$side_difference_large, (1 - config$side_difference_large))
-        ),
-        nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
-        ),
-        ncol = 2
       ),
-      cowplot::plot_grid(
-        cowplot::plot_grid(NULL, cowplot::plot_grid(NULL,
-          expressed_transcripts_low,
+      nrow = 1,
+      labels = c("N"),
+      label_size = config$label_size
+    ),
+    cowplot::plot_grid(
+      cowplot::plot_grid(NULL,
+        cowplot::plot_grid(NULL,
+          (ggdraw() + draw_image(magick::image_read_pdf(config$novel_track_path, density = 800))),
           ncol = 2,
           rel_widths = c(config$side_difference_large, (1 - config$side_difference_large))
         ),
         nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
-        ),
-        cowplot::plot_grid(NULL, cowplot::plot_grid(NULL,
-          expressed_transcripts_high,
-          ncol = 2,
-          rel_widths = c(config$side_difference_large, (1 - config$side_difference_large))
-        ),
-        nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
-        ),
-        ncol = 2
       ),
-      nrow = 2,
-      rel_heights = c(0.4, 0.75)
+      nrow = 1,
+      labels = c("O"),
+      label_size = config$label_size
     ),
     label_size = config$label_size,
-    ncol = 2,
-    labels = c("", "P"),
-    rel_widths = c(0.425, 0.6)
+    ncol = 3,
+    nrow = 1,
+    labels = c("", "", ""),
+    rel_widths = c(0.475, 0.3, 0.35)
   )
 
   final <- cowplot::plot_grid(
@@ -1480,13 +1437,13 @@ plot_figure_01 <- function(output_path) {
     fourth_row,
     fifth_row,
     nrow = 5,
-    rel_heights = c(1, 0.8, 1, 1 / 2, 1.1)
+    rel_heights = c(1, 0.8, 1, 1 / 2, 1 / 2)
   )
 
   ggsave(output_path, final,
     dpi = 300,
     width = 26,
-    height = 36
+    height = 35
   )
   return(0)
 }

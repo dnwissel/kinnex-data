@@ -2015,7 +2015,7 @@ plot_figure_02 <- function(output_path, depth) {
     geom_jitter() +
     theme_big_simple() +
     labs(x = "Transcripts per gene (GENCODE)") +
-    labs(y = "-log10(q) (Mult. conc.)") +
+    labs(y = "-log10(q) (Mult. disc.)") +
     facet_wrap(~category) +
     geom_hline(yintercept = 5, lty = 2, color = "red", linewidth = 1)
 
@@ -2043,13 +2043,15 @@ plot_figure_02 <- function(output_path, depth) {
     filter(ill_detected_transcripts_per_gene > 0 & kinnex_detected_transcripts_per_gene > 0) %>%
     ggplot(aes(
       y = -log(p_value, base = 10),
-      x = mean_inf_rv * (cpm + 0.01),
+      #x = mean_inf_rv * (cpm + 0.01),
+      x = mean_inf_rv,
       color = mean_factor
     )) +
     geom_point(size = 3) +
     theme_big_simple() +
-    labs(y = "-log10(q) (Mult. conc.)", color = "") +
-    labs(x = "Mean inferential variability per gene * CPM (Illumina)") +
+    labs(y = "-log10(q) (Mult. disc.)", color = "") +
+    #labs(x = "Mean inferential variability per gene * CPM (Illumina)") +
+    labs(x = "Mean inferential variability per gene (Illumina)") +
     facet_wrap(~category) +
     scale_x_log10() +
     stat_cor(aes(label = ..r.label..), method = "pearson", size = 6, show.legend = FALSE) +
@@ -2079,14 +2081,14 @@ plot_figure_02 <- function(output_path, depth) {
       nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
     cowplot::plot_grid(NULL,
-      cowplot::plot_grid(NULL,
-        inf_var,
-        ncol = 2,
-        rel_widths = c(
-          config$side_difference_large, (1 - config$side_difference_large)
-        )
-      ),
-      nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
+                       cowplot::plot_grid(NULL,
+                                          ggdraw(patchwork::patchGrob(dte_gencode)),
+                                          ncol = 2,
+                                          rel_widths = c(
+                                            config$side_difference_large, (1 - config$side_difference_large)
+                                          )
+                       ),
+                       nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
     cowplot::plot_grid(NULL,
       cowplot::plot_grid(NULL,
@@ -2117,15 +2119,25 @@ plot_figure_02 <- function(output_path, depth) {
 
   second_row <- cowplot::plot_grid(
     cowplot::plot_grid(NULL,
-      cowplot::plot_grid(NULL,
-        ggdraw(patchwork::patchGrob(dte_gencode)),
-        ncol = 2,
-        rel_widths = c(
-          config$side_difference_large, (1 - config$side_difference_large)
-        )
-      ),
-      nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
+                       cowplot::plot_grid(NULL,
+                                          inf_var,
+                                          ncol = 2,
+                                          rel_widths = c(
+                                            config$side_difference_large, (1 - config$side_difference_large)
+                                          )
+                       ),
+                       nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
+    #cowplot::plot_grid(NULL,
+    #  cowplot::plot_grid(NULL,
+    #    ggdraw(patchwork::patchGrob(dte_gencode)),
+    #    ncol = 2,
+    #    rel_widths = c(
+    #      config$side_difference_large, (1 - config$side_difference_large)
+    #    )
+    #  ),
+    #  nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
+    #),
     cowplot::plot_grid(NULL,
       cowplot::plot_grid(NULL,
         ggdraw(patchwork::patchGrob(dte_gencode_corrected)),
@@ -2167,7 +2179,7 @@ plot_figure_02 <- function(output_path, depth) {
       nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
     ncol = 5,
-    labels = c("E", "", "F", "", "G"),
+    labels = c("E", "F", "G", "", "H"),
     label_size = 36,
     rel_widths = c(1, 1, 1, 1, 1.25)
   )
@@ -2200,7 +2212,7 @@ plot_figure_02 <- function(output_path, depth) {
       nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
     ncol = 2,
-    labels = c("H", "I"),
+    labels = c("I", "J"),
     label_size = 36,
     rel_widths = c(1.5, 2)
   )
@@ -2237,7 +2249,7 @@ plot_figure_02 <- function(output_path, depth) {
       nrow = 2, rel_heights = c(config$top_difference, (1 - config$top_difference))
     ),
     ncol = 3,
-    labels = c("J", "K", "L"),
+    labels = c("K", "L", "M"),
     label_size = 36,
     rel_widths = c(2, 1, 2)
   )
@@ -2285,7 +2297,7 @@ plot_figure_02 <- function(output_path, depth) {
     ),
     rel_widths = c(1, 1, 1, 1),
     ncol = 4,
-    labels = c("M", "", "N"),
+    labels = c("N", "", "O"),
     label_size = 36
   )
 
